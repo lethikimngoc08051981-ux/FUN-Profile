@@ -3,18 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAccount, useSendTransaction } from 'wagmi';
-import { parseEther } from 'viem';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { toast } from 'sonner';
 
-export const SendCrypto = () => {
-  const { address, isConnected } = useAccount();
+export const SendSolana = () => {
+  const { publicKey, sendTransaction, connected } = useWallet();
+  const { connection } = useConnection();
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
-  const { sendTransaction, isPending } = useSendTransaction();
+  const [isPending, setIsPending] = useState(false);
 
   const handleSend = async () => {
-    if (!isConnected || !address) {
+    if (!connected || !publicKey) {
       toast.error('Please connect your wallet first');
       return;
     }
@@ -25,47 +26,51 @@ export const SendCrypto = () => {
     }
 
     try {
-      sendTransaction(
-        {
-          to: recipient as `0x${string}`,
-          value: parseEther(amount),
-        },
-        {
-          onSuccess: () => {
-            toast.success('Transaction sent successfully!');
-            setRecipient('');
-            setAmount('');
-          },
-          onError: (error) => {
-            toast.error(error.message || 'Transaction failed');
-          },
-        }
+      setIsPending(true);
+      const recipientPubkey = new PublicKey(recipient);
+      const lamports = parseFloat(amount) * LAMPORTS_PER_SOL;
+
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: recipientPubkey,
+          lamports,
+        })
       );
+
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction(signature, 'confirmed');
+
+      toast.success('Transaction sent successfully!');
+      setRecipient('');
+      setAmount('');
     } catch (error: any) {
       toast.error(error.message || 'Failed to send transaction');
+    } finally {
+      setIsPending(false);
     }
   };
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Send Crypto</CardTitle>
-        <CardDescription>Send ETH or BNB to any address</CardDescription>
+        <CardTitle>Send SOL</CardTitle>
+        <CardDescription>Send Solana to any address</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="recipient">Recipient Address</Label>
+          <Label htmlFor="sol-recipient">Recipient Address</Label>
           <Input
-            id="recipient"
-            placeholder="0x..."
+            id="sol-recipient"
+            placeholder="Solana address..."
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
+          <Label htmlFor="sol-amount">Amount (SOL)</Label>
           <Input
-            id="amount"
+            id="sol-amount"
             type="number"
             step="0.001"
             placeholder="0.0"
@@ -75,7 +80,7 @@ export const SendCrypto = () => {
         </div>
         <Button
           onClick={handleSend}
-          disabled={!isConnected || isPending}
+          disabled={!connected || isPending}
           className="w-full"
         >
           {isPending ? 'Sending...' : 'Send'}

@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { WalletConnect } from '@/components/wallet/WalletConnect';
 import { SendCrypto } from '@/components/wallet/SendCrypto';
+import { SolanaWallet } from '@/components/wallet/SolanaWallet';
+import { SendSolana } from '@/components/wallet/SendSolana';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Wallet = () => {
   const navigate = useNavigate();
@@ -34,10 +37,20 @@ const Wallet = () => {
         <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
           Your Web3 Wallet
         </h1>
-        <div className="grid gap-6">
-          <WalletConnect />
-          <SendCrypto />
-        </div>
+        <Tabs defaultValue="evm" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="evm">Ethereum & BSC</TabsTrigger>
+            <TabsTrigger value="solana">Solana</TabsTrigger>
+          </TabsList>
+          <TabsContent value="evm" className="space-y-6">
+            <WalletConnect />
+            <SendCrypto />
+          </TabsContent>
+          <TabsContent value="solana" className="space-y-6">
+            <SolanaWallet />
+            <SendSolana />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
