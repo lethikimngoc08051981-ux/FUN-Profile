@@ -147,9 +147,9 @@ export const FriendRequestButton = ({ userId, currentUserId }: FriendRequestButt
 
   if (status === "pending_sent") {
     return (
-      <Button variant="outline" disabled size="sm">
+      <Button onClick={removeFriend} disabled={loading} variant="outline" size="sm">
         <Clock className="w-4 h-4 mr-2" />
-        Request Sent
+        Cancel Request
       </Button>
     );
   }
